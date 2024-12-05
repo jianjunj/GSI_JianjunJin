@@ -1961,6 +1961,7 @@ subroutine ret_amsua(tb_obs,nchanl,tsavg5,zasat,clwp_amsua,ierrret,scat)
 ! Declare local variables 
   real(r_kind) :: d0, d1, d2, coszat
 ! real(r_kind) :: c0, c1, c2
+  real(r_kind) :: tb890 = 0.0
 
   
   coszat=cos(zasat)
@@ -1979,8 +1980,17 @@ subroutine ret_amsua(tb_obs,nchanl,tsavg5,zasat,clwp_amsua,ierrret,scat)
   endif
 
   if (present(scat)) then
-      scat=-113.2_r_kind+(2.41_r_kind-0.0049_r_kind*tb_obs(1))*tb_obs(1)  &
-           +0.454_r_kind*tb_obs(2)-tb_obs(15)
+      if (nchanl == 15) then
+!         AMSU-A
+          tb890 = tb_obs(15)
+      else if (nchanl == 22) then
+!         ATMS
+          tb890 = tb_obs(16)
+      endif
+      if (tb890 > 0.0) then
+        scat=-113.2_r_kind+(2.41_r_kind-0.0049_r_kind*tb_obs(1))*tb_obs(1)  &
+             +0.454_r_kind*tb_obs(2)-tb890
+      endif
       scat=max(zero,scat)
   end if
 
