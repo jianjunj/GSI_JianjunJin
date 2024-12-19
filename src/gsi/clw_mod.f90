@@ -1986,6 +1986,9 @@ subroutine ret_amsua(tb_obs,nchanl,tsavg5,zasat,clwp_amsua,ierrret,scat)
      else if (nchanl == 22) then
 !       ATMS
         tb890 = tb_obs(16)
+     else if (nchanl == 24) then
+!       MWS (Metop-SG)
+        tb890 = tb_obs(17)
      endif
      if (tb890 > zero) then
         scat=-113.2_r_kind+(2.41_r_kind-0.0049_r_kind*tb_obs(1))*tb_obs(1)  &
