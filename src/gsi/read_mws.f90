@@ -138,7 +138,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   integer(i_kind) ireadsb,ireadmg,nrec_startx
   integer(i_kind) i,j,k,ntest,iob,llll
   integer(i_kind) iret,idate,nchanl,n,idomsfc(1)
-  integer(i_kind) ich1,ich2,ich8,ich15,ich16,ich17
+  integer(i_kind) ich1,ich2,ich9,ich16,ich17,ich18
   integer(i_kind) kidsat,maxinfo
   integer(i_kind) nmind,itx,nreal,nele,itt,num_obs
   integer(i_kind) iskip,ichan2,ichan1,ichan16,ichan17
@@ -195,7 +195,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   real(r_kind)    :: ptime,timeinflat,crit0
   integer(i_kind) :: ithin_time,n_tbin
   integer(i_kind),pointer :: it_mesh => null()
-
+  integer(i_kind) :: isfcalc_mws
 !**************************************************************************
 ! Initialize variables
 
@@ -240,19 +240,19 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   ich1   = 1   !1
   ich2   = 2   !2
   ich3   = 3   !3
-  ich4   = 4   !4
+
   ich6   = 6   !6
-  ich8   = 8   !8
-  ich15  = 15  !15
+  ich9   = 9   !8
   ich16  = 16  !16
   ich17  = 17  !17
+  ich18  = 18  !18
 ! Set array index for surface-sensing channels
   ichan1  = newchn(sis,ich1)
   ichan2  = newchn(sis,ich2)
   ichan3  = newchn(sis,ich3)
 
-  ichan16 = newchn(sis,ich16)
-  ichan17 = newchn(sis,ich17)
+  ichan16 = newchn(sis,ich17)
+  ichan17 = newchn(sis,ich18)
 
   if(jsatid == 'metop-sg-a1') then
 !    24: metop-D
@@ -277,7 +277,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   end do 
 
 ! Allocate arrays to hold all data for given satellite
-  nchanl=22
+  nchanl= max_chanl
   if(dval_use) maxinfo = maxinfo+2
   nreal = maxinfo + nstinfo
   nele  = nreal   + nchanl
@@ -285,7 +285,9 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   nrec=999999
 
 ! IFSCALC setup
-  if (isfcalc==1) then
+! Jin. Replayce isfcalc by isfcalc_mws before calc_fov_crosstrk works for MWS data.
+  isfcalc_mws = 0
+  if (isfcalc_mws==1) then
      instr=20                    
      ichan=16                    ! pick a surface sens. channel
      expansion=2.9_r_kind        ! use almost three for microwave sensors.
@@ -312,7 +314,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   if (.not.assim) val_tovs=zero
 
 ! Initialize variables for use by FOV-based surface code.
-  if (isfcalc == 1) then
+  if (isfcalc_mws == 1) then
      call instrument_init(instr,jsatid,expansion,valid)
      if (.not. valid) then
        if (assim) then
@@ -327,7 +329,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   endif
 
 ! This eventually needs to be spit between MHS and AMSU-A like channels
-  if (isfcalc==1) then
+  if (isfcalc_mws==1) then
 !   if (amsub.or.mhs)then
 !     rlndsea(4) = max(rlndsea(0),rlndsea(1),rlndsea(2),rlndsea(3))
 !   else
@@ -602,7 +604,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
            
 !          Flag profiles where key channels are bad  
            if((j == ich1 .or. j == ich2 .or. &
-                j == ich16 .or. j == ich17)) critical_channels_missing = .true.
+                j == ich17 .or. j == ich18)) critical_channels_missing = .true.
         endif
      end do
      if (iskip >= nchanl) cycle ObsLoop
@@ -620,7 +622,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
 !    FOV-based surface code requires fov number.  if out-of-range, then
 !    skip this ob.
 
-     if (isfcalc == 1) then
+     if (isfcalc_mws == 1) then
         call fov_check(ifov,instr,ichan,valid)
         if (.not. valid) cycle ObsLoop
 
@@ -651,13 +653,13 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
               if (adp_anglebc .and. newpc4pred) then
                  ch1 = bt_in(ich1)-ang_rad(ichan1)*cbias(ifovmod,ichan1)
                  ch2 = bt_in(ich2)-ang_rad(ichan2)*cbias(ifovmod,ichan2)
-                 ch16= bt_in(ich16)-ang_rad(ichan16)*cbias(ifovmod,ichan16)
+                 ch16= bt_in(ich17)-ang_rad(ichan16)*cbias(ifovmod,ichan16)
               else
                  ch1 = bt_in(ich1)-ang_rad(ichan1)*cbias(ifovmod,ichan1)+ &
                       air_rad(ichan1)*cbias(nadir,ichan1)
                  ch2 = bt_in(ich2)-ang_rad(ichan2)*cbias(ifovmod,ichan2)+ &
                       air_rad(ichan2)*cbias(nadir,ichan2)   
-                 ch16= bt_in(ich16)-ang_rad(ichan16)*cbias(ifovmod,ichan16)+ &
+                 ch16= bt_in(ich17)-ang_rad(ichan16)*cbias(ifovmod,ichan16)+ &
                       air_rad(ichan16)*cbias(nadir,ichan16)
               end if
               if (isflg == 0 .and. ch1<285.0_r_kind .and. ch2<285.0_r_kind) then
@@ -816,7 +818,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   call destroygrids
 
 ! Deallocate FOV surface code arrays and nullify pointers.
-  if (isfcalc == 1) call fov_cleanup
+  if (isfcalc_mws == 1) call fov_cleanup
 
   if(diagnostic_reg.and.ntest>0) write(6,*)'READ_MWS:  ',&
      'mype,ntest,disterrmax=',mype,ntest,disterrmax
