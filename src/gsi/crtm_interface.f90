@@ -1162,7 +1162,7 @@ subroutine call_crtm(obstype,obstime,data_s,nchanl,nreal,ich, &
   integer(i_kind):: iqs,iozs,icfs
   integer(i_kind):: inis,inrs   
   integer(i_kind):: error_status_clr
-  integer(i_kind):: idx700,dprs,dprs_min  
+  integer(i_kind):: idx700
   integer(i_kind),dimension(8)::obs_time,anal_time
   integer(i_kind),dimension(msig) :: klevel
 ! ****************************** 
@@ -1171,6 +1171,7 @@ subroutine call_crtm(obstype,obstime,data_s,nchanl,nreal,ich, &
 ! ******************************
   integer(i_kind):: lai_type
 
+  real(r_kind):: dprs,dprs_min  
   real(r_kind):: wind10,wind10_direction,windratio,windangle 
   real(r_kind):: w00,w01,w10,w11,kgkg_kgm2,f10,panglr,dx,dy
   real(r_kind):: delx,dely,delx1,dely1,dtsig,dtsigp,dtsfc,dtsfcp,dtaer,dtaerp
