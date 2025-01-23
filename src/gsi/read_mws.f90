@@ -482,11 +482,10 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
 
 !          Read data record.  Increment data counter
            call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBR')
-           if (iret /= 0) then
+           if (iret <= 0) then
 !             Read 'TMBRST' in the sample data.
               call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBRST')
            endif
-
            bt_save(1:nchanl,iob) = data1b8(1:nchanl)
 
            iob=iob+1
