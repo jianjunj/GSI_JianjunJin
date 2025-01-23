@@ -64,9 +64,9 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
 !     nrec_start_db - first db subset with useful information
 !
 !   output argument list:
-!     nread    - number of BUFR ATMS 1b observations read
-!     ndata    - number of BUFR ATMS 1b profiles retained for further processing
-!     nodata   - number of BUFR ATMS 1b observations retained for further processing
+!     nread    - number of BUFR MWS 1b observations read
+!     ndata    - number of BUFR MWS 1b profiles retained for further processing
+!     nodata   - number of BUFR MWS 1b observations retained for further processing
 !     nobs     - array of observations on each subdomain for each processor
 !
 ! attributes:
@@ -425,8 +425,16 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
            idate5(4) = bfr1bhdr(6) !hour
            idate5(5) = bfr1bhdr(7) !minute
            call w3fs21(idate5,nmind)
-           t4dv= (real((nmind-iwinbgn),r_kind) + bfr1bhdr(8)*r60inv)*r60inv    ! add in seconds
-           tdiff=t4dv+(iwinbgn-gstime)*r60inv
+           if (idate5(1) > 2025) then 
+              t4dv= (real((nmind-iwinbgn),r_kind) + bfr1bhdr(8)*r60inv)*r60inv    ! add in seconds
+              tdiff=t4dv+(iwinbgn-gstime)*r60inv
+           else
+              !jjj for sample data with date before 01/01/2025
+              ! Make date and time within the analysis window for mws sample observations.
+              t4dv = real((nmind-gstime),r_kind) + bfr1bhdr(8)*r60inv*r60inv   ! hours from gstime
+              tdiff = t4dv - int(t4dv/twind, i_kind)*twind  ! makes |obstime - gstime | < twind
+              t4dv = tdiff - (iwinbgn-gstime)*r60inv ! hours from the beginning of the analysis window
+           endif
 
            if (l4dvar.or.l4densvar) then
               if (t4dv<minus_one_minute .OR. t4dv>winlen+one_minute) &
@@ -473,13 +481,11 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
            solazi_save(iob)=bfr2bhdr(4) 
 
 !          Read data record.  Increment data counter
-!          TMBR is actually the antenna temperature for most microwave sounders but for
-!          ATMS it is stored in TMANT.
-!          ATMS is assumed not to come via EARS
+!          'TMBRST' is in the sample data.
            if (ta2tb) then
               call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBR')
            else
-              call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMANT')
+              call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBRST')
            endif
 
            bt_save(1:nchanl,iob) = data1b8(1:nchanl)
@@ -496,7 +502,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   num_obs = iob-1
 
   if (num_obs <= 0) then
-     write(6,*) 'READ_MWS: No ATMS Data were read in'
+     write(6,*) 'READ_MWS: No MWS Data were read in'
      return
   end if
 
@@ -511,10 +517,11 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
 ! write(6,*) 'ATMS_Spatial_Average Called with IRet=',IRet
   DEALLOCATE(Relative_Time_In_Seconds)
   
-  IF (IRet /= 0) THEN
-     write(6,*) 'Error Calling ATMS_Spatial_Average from READ_MWS'
-     RETURN
-  END IF
+! IF (IRet /= 0) THEN
+!    write(6,*) 'Error Calling ATMS_Spatial_Average from READ_MWS'
+!    RETURN
+! END IF
+  write(6,*) 'No ATMS-alike spatial average for MWS in READ_MWS for now.'
 
 ! Complete Read_MWS thinning and QC steps
 
