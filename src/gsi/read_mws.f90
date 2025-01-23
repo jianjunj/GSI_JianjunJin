@@ -6,14 +6,14 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:    read_mws                  read mws 1b data
-!   prgmmr: Jianjun Jin          org: ncep/emc                date: 2024-10-15
+!   prgmmr:         Jin          org: ncep/emc                date: 2024-10-15
 !
 ! abstract:  This routine reads BUFR format MWS radiance 
-!            (brightness temperature) files. This is copied from read_atms.f90
-!            originally written by A. Collard. Some modification is made for MWS
-!            observations. Here are some in read_atms.f90: Optionally the data
+!            (brightness temperature) files. This is edited from read_atms.f90
+!            originally written by A. Collard. Here are some notes in
+!            read_atms.f90:   Optionally the data
 !            are filtered using the AAPP filtering code. This requires
-!            This code to differ from read_bufrddtovs in that all the
+!            This code to differ from read_bufrtovs in that all the
 !            data needs to be read in together before it is processed further. 
 !
 !            Also optionally, the data 
@@ -289,7 +289,7 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   isfcalc_mws = 0
   if (isfcalc_mws==1) then
      instr=20                    
-     ichan=16                    ! pick a surface sens. channel
+     ichan=17                    ! pick a surface sens. channel
      expansion=2.9_r_kind        ! use almost three for microwave sensors.
   endif
 !   Set rlndsea for types we would prefer selecting
@@ -481,10 +481,9 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
            solazi_save(iob)=bfr2bhdr(4) 
 
 !          Read data record.  Increment data counter
-!          'TMBRST' is in the sample data.
-           if (ta2tb) then
-              call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBR')
-           else
+           call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBR')
+           if (iret /= 0) then
+!             Read 'TMBRST' in the sample data.
               call ufbrep(lnbufr,data1b8,1,nchanl,iret,'TMBRST')
            endif
 
@@ -511,7 +510,6 @@ subroutine read_mws(mype,val_tovs,ithin,isfcalc,&
   ALLOCATE(Relative_Time_In_Seconds(Num_Obs))
   ALLOCATE(IScan(Num_Obs))
   Relative_Time_In_Seconds = 3600.0_r_kind*T4DV_Save(1:Num_Obs)
-! Skipping doing Spatial_Average before there is program to do that.
 !  CALL ATMS_Spatial_Average(Num_Obs, NChanl, IFOV_Save(1:Num_Obs), &
 !       Relative_Time_In_Seconds, BT_Save(1:nchanl,1:Num_Obs), IScan, IRet)
 ! write(6,*) 'ATMS_Spatial_Average Called with IRet=',IRet
